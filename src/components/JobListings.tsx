@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import JobListing from "./JobListing";
 import Spinner from "./Spinner";
+import { db } from "../../firebaseConfig";
+import { collection, getDocs, query, limit } from "firebase/firestore";
 
 interface Job {
   id: string;
@@ -21,25 +23,39 @@ const JobListings = ({ isHome = false }: JobsListingProps) => {
 
   useEffect(() => {
     const fetchJobs = async () => {
-      const apiUrl = isHome ? "/api/jobs?_limit=3" : "/api/jobs";
-      try {
-        const res = await fetch(apiUrl);
-        const data = await res.json();
+      setLoading(true); // Show loading spinner during data fetch
 
-        setJobs(data);
+      try {
+        const jobsCollection = collection(db, "jobs");
+
+        // If on the home page, limit the number of jobs retrieved
+        const jobsQuery = isHome
+          ? query(jobsCollection, limit(3))
+          : jobsCollection;
+
+        const querySnapshot = await getDocs(jobsQuery);
+
+        const jobData = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Job[];
+
+        setJobs(jobData);
       } catch (error) {
-        console.log("error fetching data", error);
+        console.log("Error fetching data from Firestore:", error);
       } finally {
-        setLoading(false);
+        setLoading(false); // Hide loading spinner once data is fetched
       }
     };
+
     fetchJobs();
   }, [isHome]);
+
   return (
     <section className="bg-blue-50 px-4 py-10">
       <div className="container-xl lg:container m-auto">
         <h2 className="text-3xl font-bold text-indigo-500 mb-6 text-center">
-          {isHome ? "Recent Jobs" : " Browse Jobs"}
+          {isHome ? "Recent Jobs" : "Browse Jobs"}
         </h2>
 
         {loading ? (

@@ -12,7 +12,15 @@ import JobPage, { jobLoader } from "./pages/JobPage";
 import AddJobPage from "./pages/AddJobPage";
 import EditJobPage from "./pages/EditJobPage";
 
-// Define the Job type
+import { db } from "../firebaseConfig";
+import {
+  collection,
+  addDoc,
+  doc,
+  deleteDoc,
+  updateDoc,
+} from "firebase/firestore";
+
 type Job = {
   title: string;
   type: string;
@@ -29,38 +37,46 @@ type Job = {
 type JobWithId = Job & { id: string };
 
 const App = () => {
-  // Update addJob function to accept a parameter of type Job
   const addJob = async (newJob: Job) => {
-    const res = await fetch("/api/jobs", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newJob),
-    });
-    console.log(res);
-    return;
+    try {
+      const res = await addDoc(collection(db, "jobs"), newJob);
+      console.log("Job added with ID:", res.id);
+      return res;
+    } catch (error) {
+      console.error("Error adding job:", error);
+    }
   };
 
-  //delete Job
   const deleteJob = async (id: string) => {
-    const res = await fetch(`/api/jobs/${id}`, {
-      method: "DELETE",
-    });
-    console.log(res);
-    return;
+    try {
+      const jobRef = doc(db, "jobs", id);
+      await deleteDoc(jobRef);
+      console.log(`Job with ID ${id} deleted successfully`);
+    } catch (error) {
+      console.error("Error deleting job:", error);
+    }
   };
 
   const updateJob = async (job: JobWithId) => {
-    const res = await fetch(`/api/jobs/${job.id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(job),
-    });
-    console.log(res);
-    return;
+    try {
+      const jobRef = doc(db, "jobs", job.id);
+      await updateDoc(jobRef, {
+        title: job.title,
+        type: job.type,
+        location: job.location,
+        description: job.description,
+        salary: job.salary,
+        company: {
+          name: job.company.name,
+          description: job.company.description,
+          contactEmail: job.company.contactEmail,
+          contactPhone: job.company.contactPhone,
+        },
+      });
+      console.log(`Job with ID ${job.id} updated successfully`);
+    } catch (error) {
+      console.error("Error updating job:", error);
+    }
   };
 
   const router = createBrowserRouter(
@@ -83,6 +99,7 @@ const App = () => {
       </Route>
     )
   );
+
   return <RouterProvider router={router} />;
 };
 

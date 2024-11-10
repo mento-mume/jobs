@@ -6,6 +6,8 @@ import {
 } from "react-router-dom";
 import { toast } from "react-toastify";
 import { FaMapMarker, FaArrowLeft } from "react-icons/fa";
+import { db } from "../../firebaseConfig"; // Import Firestore instance
+import { doc, getDoc } from "firebase/firestore"; // Import Firestore functions
 
 // Define the Company interface
 interface Company {
@@ -25,22 +27,24 @@ interface Job {
   salary: string;
   company: Company;
 }
+
 type JobPageProps = {
   deleteJob: (jobId: string) => void;
 };
+
 const JobPage = ({ deleteJob }: JobPageProps) => {
   const navigate = useNavigate();
   const job = useLoaderData() as Job;
 
-  const onDeleteClick = (jobId: string) => {
-    const confirm = window.confirm("Are you sure you want to delete this");
+  const onDeleteClick = async (jobId: string) => {
+    const confirm = window.confirm("Are you sure you want to delete this?");
 
     if (!confirm) {
       return;
     }
 
-    deleteJob(jobId);
-    toast.success("Job listing deleted succesfully!!");
+    await deleteJob(jobId);
+    toast.success("Job listing deleted successfully!");
     navigate("/JobsPage");
   };
   return (
@@ -131,16 +135,18 @@ const JobPage = ({ deleteJob }: JobPageProps) => {
   );
 };
 
-// Update the jobLoader to use the correct type from react-router-dom
+// Update the jobLoader to fetch data from Firestore
 const jobLoader = async ({ params }: LoaderFunctionArgs) => {
   const { id } = params;
   if (!id) throw new Error("Job ID is required");
 
-  const res = await fetch(`/api/jobs/${id}`);
-  if (!res.ok) throw new Error("Failed to fetch job data");
+  // Firestore reference
+  const jobDocRef = doc(db, "jobs", id);
+  const jobDoc = await getDoc(jobDocRef);
 
-  const data = await res.json();
-  return data;
+  if (!jobDoc.exists()) throw new Error("Job not found");
+
+  return { id, ...jobDoc.data() } as Job;
 };
 
 export { JobPage as default, jobLoader };
