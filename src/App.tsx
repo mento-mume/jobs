@@ -1,3 +1,5 @@
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import {
   Route,
   createBrowserRouter,
@@ -11,6 +13,8 @@ import NotFoundPage from "./pages/NotFoundPage";
 import JobPage, { jobLoader } from "./pages/JobPage";
 import AddJobPage from "./pages/AddJobPage";
 import EditJobPage from "./pages/EditJobPage";
+import Profile from "./pages/Profile";
+import PrivateRoute from "./components/PrivateRoute";
 
 import { db } from "../firebaseConfig";
 import {
@@ -20,6 +24,9 @@ import {
   deleteDoc,
   updateDoc,
 } from "firebase/firestore";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 
 type Job = {
   title: string;
@@ -85,6 +92,12 @@ const App = () => {
         <Route index element={<HomePage />} />
         <Route path="/JobsPage" element={<JobsPage />} />
         <Route path="/add-job" element={<AddJobPage addJobSubmit={addJob} />} />
+        <Route path="/Login" element={<Login />} />
+        <Route path="/Register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/Profile" element={<PrivateRoute />}>
+          <Route index element={<Profile />} />
+        </Route>
         <Route
           path="/JobsPage/:id"
           element={<JobPage deleteJob={deleteJob} />}
@@ -100,7 +113,12 @@ const App = () => {
     )
   );
 
-  return <RouterProvider router={router} />;
+  return (
+    <>
+      <RouterProvider router={router} />
+      <ToastContainer />;
+    </>
+  );
 };
 
 export default App;
